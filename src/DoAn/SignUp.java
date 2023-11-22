@@ -103,8 +103,10 @@ public class SignUp extends JFrame {
 		JButton btnNewButton = new JButton("Đăng ký");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(isInputValid()) {
 				Connection connection = JDBCUtil.getConnection();
 				PreparedStatement preparedStatement = null;
+				
 				try {
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
 			        String sql = "INSERT INTO nameid (username,password,email) VALUES (?,?,?)";
@@ -128,16 +130,19 @@ public class SignUp extends JFrame {
 			        String email = textField.getText();
 			        preparedStatement.setString(3, email);
 			        int rowsAffected = preparedStatement.executeUpdate();
-
+			        
 			        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
 			        if (rowsAffected > 0) {
+			        	Login loginFrame = new Login();
+		                loginFrame.setVisible(true);
+		                dispose();
 			            System.out.println("Thông tin người dùng đã được thêm vào CSDL.");
 
 			            // Lấy ID của câu hỏi vừa thêm vào
 			            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
 			            if (generatedKeys.next()) {
 			                int nameId = generatedKeys.getInt(1);
-
+			                
 			               
 			        } else {
 			            System.out.println("Không thể thêm câu hỏi vào CSDL.");
@@ -150,6 +155,7 @@ public class SignUp extends JFrame {
 			        JDBCUtil.closeConnection(connection);
 			    }
 			}
+				}
 		});
         btnNewButton.setBounds(285, 212, 89, 23);
         contentPane.add(btnNewButton);
@@ -186,6 +192,19 @@ public class SignUp extends JFrame {
 		btnNewButton_1.setBounds(180, 212, 89, 23);
 		contentPane.add(btnNewButton_1);
 	}
+	    private boolean isInputValid() {
+		    String email = textField.getText();
+		    String password = new String(passwordField.getPassword());
+		    String username = textField_2.getText();
+
+		    // Kiểm tra xem có bất kỳ trường nào bị trống không
+		    if (email.isEmpty() || password.isEmpty() || username.isEmpty()) {
+		        JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }
+
+		    return true;
+		}
 	    public class PasswordHasher {
 
 	    	public static String hashPassword(String password) throws NoSuchAlgorithmException {

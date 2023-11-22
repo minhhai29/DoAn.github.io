@@ -5,12 +5,22 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import DoAn.SignUp.PasswordHasher;
+import database.JDBCUtil;
+
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import java.awt.Font;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 import javax.swing.JPasswordField;
 
@@ -70,9 +80,49 @@ public class Login extends JFrame {
 		JButton btnNewButton = new JButton("Đăng nhập");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				HomePage homeFrame = new HomePage();
-                homeFrame.setVisible(true);
-                dispose();
+				if(isInputValid()) {
+					Connection connection = JDBCUtil.getConnection();
+					PreparedStatement preparedStatement = null;
+					try {
+				        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
+						String sql = "SELECT * FROM nameid WHERE username = ? AND password = ?";
+
+				        // Tạo một PreparedStatement cho bảng câu hỏi
+				        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+
+				        // Lấy giá trị từ form và thiết lập cho các tham số trong câu truy vấn câu hỏi
+				        String username = textField.getText();
+				        preparedStatement.setString(1, username);
+				        String password = passwordField.getText();
+				        String hashedPassword = null;
+	                    try {
+	                        hashedPassword = PasswordHasher.hashPassword(password);
+	                    } catch (NoSuchAlgorithmException ex) {
+	                        // Handle the exception (print or log it, for example)
+	                        ex.printStackTrace();
+	                    }
+
+				        ResultSet resultSet = preparedStatement.executeQuery();
+				        return resultSet.next();
+				        
+				        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
+				        if (resultSet) {
+				        	HomePage homeFrame = new HomePage();
+			                homeFrame.setVisible(true);
+			                dispose();
+
+				        } 
+				        
+				    } catch (SQLException ex) {
+				        ex.printStackTrace();
+				    } finally {
+				        // Đóng kết nối và các PreparedStatement
+				        JDBCUtil.closeConnection(connection);
+				    }
+					
+				}
+				
+				
 			}
 		});
 		btnNewButton.setBounds(103, 169, 109, 23);
@@ -93,4 +143,50 @@ public class Login extends JFrame {
 		passwordField.setBounds(156, 114, 184, 20);
 		contentPane.add(passwordField);
 	}
+	private boolean isInputValid() {
+	    String username = textField.getText();
+	    String password = new String(passwordField.getPassword());
+
+	    // Kiểm tra xem có bất kỳ trường nào bị trống không
+	    if (password.isEmpty() || username.isEmpty()) {
+	        JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+	        return false;
+	    }
+
+	    return true;
+	}
+	public static boolean authenticateUser(String username, String password) {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        try {
+
+            // Chuẩn bị câu truy vấn
+            String sql = "SELECT * FROM nameid WHERE username = ? AND password = ?";
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, password);
+
+            // Thực hiện truy vấn
+            resultSet = preparedStatement.executeQuery();
+
+            // Nếu có bản ghi khớp, trả về true
+            return resultSet.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // Đóng tất cả các resource
+            try {
+                if (resultSet != null) resultSet.close();
+                if (preparedStatement != null) preparedStatement.close();
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        // Trả về false nếu có lỗi hoặc không có bản ghi khớp
+        return false;
+    }
+
 }
