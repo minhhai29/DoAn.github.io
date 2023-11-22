@@ -80,50 +80,44 @@ public class Login extends JFrame {
 		JButton btnNewButton = new JButton("Đăng nhập");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(isInputValid()) {
-					Connection connection = JDBCUtil.getConnection();
-					PreparedStatement preparedStatement = null;
-					try {
-				        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
-						String sql = "SELECT * FROM nameid WHERE username = ? AND password = ?";
+				if (isInputValid()) {
+			        Connection connection = JDBCUtil.getConnection();
+			        PreparedStatement preparedStatement = null;
+			        ResultSet resultSet = null;
 
-				        // Tạo một PreparedStatement cho bảng câu hỏi
-				        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+			        try {
 
-				        // Lấy giá trị từ form và thiết lập cho các tham số trong câu truy vấn câu hỏi
-				        String username = textField.getText();
-				        preparedStatement.setString(1, username);
-				        String password = passwordField.getText();
-				        String hashedPassword = null;
-	                    try {
-	                        hashedPassword = PasswordHasher.hashPassword(password);
-	                    } catch (NoSuchAlgorithmException ex) {
-	                        // Handle the exception (print or log it, for example)
-	                        ex.printStackTrace();
-	                    }
+			            // Tiếp tục với việc kiểm tra thông tin đăng nhập
+			            String sql = "SELECT * FROM nameid WHERE username=? AND password=?";
+			            preparedStatement = connection.prepareStatement(sql);
+			            
+			            String username = textField.getText();
+			            String password = passwordField.getText();
+			            String hashedPassword = PasswordHasher.hashPassword(password);
 
-				        ResultSet resultSet = preparedStatement.executeQuery();
-				        return resultSet.next();
-				        
-				        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
-				        if (resultSet) {
-				        	HomePage homeFrame = new HomePage();
-			                homeFrame.setVisible(true);
-			                dispose();
+			            preparedStatement.setString(1, username);
+			            preparedStatement.setString(2, hashedPassword);
 
-				        } 
-				        
-				    } catch (SQLException ex) {
-				        ex.printStackTrace();
-				    } finally {
-				        // Đóng kết nối và các PreparedStatement
-				        JDBCUtil.closeConnection(connection);
-				    }
-					
-				}
-				
-				
+			            resultSet = preparedStatement.executeQuery();
+
+			            if (resultSet.next()) {
+			                // Đăng nhập thành công, mở giao diện HomePage
+			                HomePage homePage = new HomePage();
+			                homePage.setVisible(true);
+			                dispose(); // Đóng frame đăng ký sau khi đăng nhập thành công
+			            } else {
+			                JOptionPane.showMessageDialog(null, "Tên người dùng hoặc mật khẩu không đúng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+			            }
+			        } catch (SQLException | NoSuchAlgorithmException ex) {
+			            ex.printStackTrace();
+			        } finally {
+			            JDBCUtil.closeResultSet(resultSet);
+			            JDBCUtil.closeStatement(preparedStatement);
+			            JDBCUtil.closeConnection(connection);
+			        }
+			    }
 			}
+
 		});
 		btnNewButton.setBounds(103, 169, 109, 23);
 		contentPane.add(btnNewButton);
@@ -188,5 +182,6 @@ public class Login extends JFrame {
         // Trả về false nếu có lỗi hoặc không có bản ghi khớp
         return false;
     }
+	
 
 }

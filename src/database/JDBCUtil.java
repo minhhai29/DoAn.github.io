@@ -2,6 +2,7 @@ package database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.mysql.cj.jdbc.CallableStatement;
@@ -29,6 +30,14 @@ public class JDBCUtil {
 		}catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	public static void closeResultSet(ResultSet resultSet) {
+		// TODO Auto-generated method stub
+		
+	}
+	public static void closeStatement(PreparedStatement preparedStatement) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

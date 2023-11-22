@@ -107,7 +107,12 @@ public class SignUp extends JFrame {
 				Connection connection = JDBCUtil.getConnection();
 				PreparedStatement preparedStatement = null;
 				
+				
 				try {
+					if (isEmailExists(connection, textField.getText())) {
+		                JOptionPane.showMessageDialog(null, "Email đã tồn tại. Vui lòng sử dụng email khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		                return; // Không tiếp tục nếu email đã tồn tại
+		            }
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
 			        String sql = "INSERT INTO nameid (username,password,email) VALUES (?,?,?)";
 
@@ -220,5 +225,19 @@ public class SignUp extends JFrame {
 	            return hexString.toString();
 	        }
 
+	    }
+	 // Hàm kiểm tra xem email đã tồn tại hay chưa
+	    private boolean isEmailExists(Connection connection, String email) throws SQLException {
+	        String query = "SELECT COUNT(*) FROM nameid WHERE email=?";
+	        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+	            preparedStatement.setString(1, email);
+	            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+	                if (resultSet.next()) {
+	                    int count = resultSet.getInt(1);
+	                    return count > 0;
+	                }
+	            }
+	        }
+	        return false;
 	    }
 }

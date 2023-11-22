@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import java.awt.Font;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -16,7 +17,9 @@ import javax.swing.JDialog;
 public class HomePage extends JFrame {
 
 	private JPanel contentPane;
-
+	private int secondsPassed = 0;
+	private Timer timer;
+    private JLabel lblNewLabel_5;
 	/**
 	 * Launch the application.
 	 */
@@ -67,13 +70,19 @@ public class HomePage extends JFrame {
 		contentPane.add(lblNewLabel_3);
 		
 		JButton btnNewButton = new JButton("Bài test IQ");
-		btnNewButton.setBounds(61, 243, 115, 45);
+		btnNewButton.setBounds(60, 236, 115, 45);
 		
 		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		contentPane.add(btnNewButton);
 		
 		JButton btnNewButton_1 = new JButton("Tìm trận");
-		btnNewButton_1.setBounds(289, 243, 115, 45);
+		btnNewButton_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+                startTimer();
+            }
+		});
+		btnNewButton_1.setBounds(265, 236, 115, 45);
 		btnNewButton_1.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		contentPane.add(btnNewButton_1);
 		
@@ -87,5 +96,27 @@ public class HomePage extends JFrame {
 			}
 		});
 		contentPane.add(btnNewButton_2);
+		
+		JLabel lblNewLabel_4 = new JLabel("Nhấn");
+		lblNewLabel_4.setBounds(265, 211, 46, 14);
+		contentPane.add(lblNewLabel_4);
 	}
+	private void startTimer() {
+		if (lblNewLabel_5 == null) {
+	        lblNewLabel_5 = new JLabel("Thời gian bắt đầu 0 giây");
+	        lblNewLabel_5.setBounds(265, 292, 171, 14);
+	        contentPane.add(lblNewLabel_5);
+	    }
+        timer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                secondsPassed++;
+                lblNewLabel_5.setText("Thời gian bắt đầu " + secondsPassed + " giây");
+            }
+        });
+        if (!timer.isRunning()) {
+            timer.start();
+        }
+    }
+
 }
