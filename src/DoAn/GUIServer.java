@@ -25,10 +25,12 @@ import javax.swing.JTextPane;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-
+import java.util.ArrayList;
+import java.util.List;
 public class GUIServer extends JFrame {
 
 	private JPanel contentPane;
+	private List<String> onlineUsers = new ArrayList<>();
 	/**
 	 * Launch the application.
 	 */

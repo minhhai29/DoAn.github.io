@@ -5,12 +5,23 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import DoAn.SignUp.PasswordHasher;
+import database.JDBCUtil;
+
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 import javax.swing.JDialog;
 
@@ -20,6 +31,7 @@ public class HomePage extends JFrame {
 	private int secondsPassed = 0;
 	private Timer timer;
     private JLabel lblNewLabel_5;
+    private int userId;
 	/**
 	 * Launch the application.
 	 */
@@ -35,7 +47,9 @@ public class HomePage extends JFrame {
 			}
 		});
 	}
-
+	public void setUserId(int userId) {
+        this.userId = userId;
+    }
 	/**
 	 * Create the frame.
 	 */
@@ -90,9 +104,12 @@ public class HomePage extends JFrame {
 		btnNewButton_2.setBounds(321, 18, 115, 59);
 		btnNewButton_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Login LoginFrame = new Login();
-                LoginFrame.setVisible(true);
-                dispose();
+				
+		                updateOnlineStatus(userId, 0);
+		                Login LoginFrame = new Login();
+		                LoginFrame.setVisible(true);
+		                dispose();
+				
 			}
 		});
 		contentPane.add(btnNewButton_2);
@@ -118,5 +135,24 @@ public class HomePage extends JFrame {
             timer.start();
         }
     }
+	private static void updateOnlineStatus(int userId, int status) {
+	    Connection connection = null;
+	    PreparedStatement preparedStatement = null;
+
+	    try {
+	        String sql = "UPDATE nameid SET isonline = ? WHERE id = ?";
+	        connection = JDBCUtil.getConnection();
+	        preparedStatement = connection.prepareStatement(sql);
+	        preparedStatement.setInt(1, status);
+	        preparedStatement.setInt(2, userId);
+	        preparedStatement.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // Đóng tất cả các resource
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+	}
 
 }

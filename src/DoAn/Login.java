@@ -29,6 +29,7 @@ public class Login extends JFrame {
 	private JPanel contentPane;
 	private JTextField textField;
 	private JPasswordField passwordField;
+	private int userId;
 
 	/**
 	 * Launch the application.
@@ -49,6 +50,9 @@ public class Login extends JFrame {
 	/**
 	 * Create the frame.
 	 */
+	public int getUserId() {
+        return userId;
+    }
 	public Login() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -101,6 +105,9 @@ public class Login extends JFrame {
 			            resultSet = preparedStatement.executeQuery();
 
 			            if (resultSet.next()) {
+			            	String loggedInUsername = resultSet.getString("username");
+			            	int userId = resultSet.getInt("id");
+			                updateOnlineStatus(userId, 1); // 1 là trạng thái đang online
 			                // Đăng nhập thành công, mở giao diện HomePage
 			                HomePage homePage = new HomePage();
 			                homePage.setVisible(true);
@@ -182,6 +189,24 @@ public class Login extends JFrame {
         // Trả về false nếu có lỗi hoặc không có bản ghi khớp
         return false;
     }
-	
+	private static void updateOnlineStatus(int userId, int status) {
+	    Connection connection = null;
+	    PreparedStatement preparedStatement = null;
+
+	    try {
+	        String sql = "UPDATE nameid SET isonline = ? WHERE id = ?";
+	        connection = JDBCUtil.getConnection();
+	        preparedStatement = connection.prepareStatement(sql);
+	        preparedStatement.setInt(1, status);
+	        preparedStatement.setInt(2, userId);
+	        preparedStatement.executeUpdate();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        // Đóng tất cả các resource
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+	}
 
 }
