@@ -103,6 +103,25 @@ public class SignUp extends JFrame {
 		JButton btnNewButton = new JButton("Đăng ký");
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				// Sinh mã OTP và lưu vào generatedOTP
+                generatedOTP = generateOTP();
+                
+                // Gửi email chứa mã OTP đến địa chỉ đã nhập
+                String email = textField.getText();
+                EmailSender.sendEmail(email, generatedOTP);
+
+                // Hiển thị hộp thoại nhập OTP
+                String enteredOTP = JOptionPane.showInputDialog("Nhập mã OTP đã gửi đến email của bạn:");
+
+                // Kiểm tra xem mã OTP nhập vào có đúng không
+                if (enteredOTP != null && enteredOTP.equals(generatedOTP)) {
+                    // Nếu đúng, tiến hành đăng ký
+                    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
+                } else {
+                    // Nếu sai, hiển thị thông báo lỗi
+                    JOptionPane.showMessageDialog(null, "Xác nhận không thành công. Vui lòng thử lại.");
+                }
+            
 				if(isInputValid()) {
 				Connection connection = JDBCUtil.getConnection();
 				PreparedStatement preparedStatement = null;
@@ -132,7 +151,7 @@ public class SignUp extends JFrame {
                     }
 
                     preparedStatement.setString(2, hashedPassword);
-			        String email = textField.getText();
+//			        String email = textField.getText();
 			        preparedStatement.setString(3, email);
 			        int rowsAffected = preparedStatement.executeUpdate();
 			        
@@ -207,9 +226,45 @@ public class SignUp extends JFrame {
 		        JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
 		        return false;
 		    }
-
+		    
+		    // Kiểm tra mật khẩu có ít nhất 5 ký tự
+		    if (password.length() < 6) {
+		        JOptionPane.showMessageDialog(null, "Mật khẩu yêu cầu phải có tối thiểu 6 ký tự.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }    
+		    
+		    // Kiểm tra định dạng email
+		    if (!email.endsWith("@gmail.com")) {
+		        JOptionPane.showMessageDialog(null, "Email không hợp lệ. Vui lòng sử dụng email có định dạng @gmail.com.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }
+		    
 		    return true;
 		}
+	    private String generateOTP() {
+	        int otpLength = 6;
+	        StringBuilder otp = new StringBuilder();
+
+	        // Sử dụng Random để sinh ngẫu nhiên từ 0-9
+	        Random random = new Random();
+	        for (int i = 0; i < otpLength; i++) {
+	            otp.append(random.nextInt(10));
+	        }
+
+	        return otp.toString();
+	    }
+	    // Thêm biến để lưu trữ OTP
+	    private String generatedOTP;
+
+	    /**
+	     * Launch the application.
+	     */
+//	    private boolean isValidPassword(String password) {
+//	        // Sử dụng biểu thức chính quy để kiểm tra định dạng email
+//	        String passwordRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+//	        return password.matches(passwordRegex);
+//	    }
+
 	    public class PasswordHasher {
 
 	    	public static String hashPassword(String password) throws NoSuchAlgorithmException {
