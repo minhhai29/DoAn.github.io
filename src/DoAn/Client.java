@@ -35,4 +35,11 @@ public class Client {
             }
         }
     }
+ // Trong Client (ở phần xử lý sự kiện của nút "Tìm trận")
+ 	public class MatchmakingClient {
+ 	    public void startMatchmaking() {
+ 	        // Gửi yêu cầu ghép cặp đến server khi người chơi ấn nút "Tìm trận"
+ 	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
+ 	    }
+ 	}
 }

@@ -22,6 +22,7 @@ import database.JDBCUtil;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -118,7 +119,7 @@ public class GUIServer extends JFrame {
         Thread serverThread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    ServerSocket serverSocket = new ServerSocket(12346);
+                	ServerSocket serverSocket = new ServerSocket(12346, 0, InetAddress.getByName("0.0.0.0"));
                     System.out.println("Server is running...");
 
                     while (true) {
@@ -173,15 +174,23 @@ public class GUIServer extends JFrame {
 
         private void closeConnection() {
             try {
-                inputStream.close();
-                outputStream.close();
-                clientSocket.close();
-                System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+                if (clientSocket != null && !clientSocket.isClosed()) {
+                    clientSocket.close();
+                    System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
+                }
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                clients.remove(this);
             }
         }
-    }
+   }
 	private List<String> getOnlineUsersFromDatabase() {
 	    List<String> onlineUsers = new ArrayList<>();
 	    Connection connection = JDBCUtil.getConnection();
@@ -231,19 +240,21 @@ public class GUIServer extends JFrame {
 	    }
 
 	    private void sendMatchmakingSuccess(String player1, String player2) {
-	        // Gửi thông báo đến client rằng họ đã được ghép cặp
-	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
+	    	openVoGame(player1);
+	        openVoGame(player2);
 	    }
 	}
 
-	// Trong Client (ở phần xử lý sự kiện của nút "Tìm trận")
-	public class MatchmakingClient {
-	    public void startMatchmaking() {
-	        // Gửi yêu cầu ghép cặp đến server khi người chơi ấn nút "Tìm trận"
-	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
-	    }
-	}
-
+	
+	private void openVoGame(String username) {
+        // Mở giao diện VoGame trong luồng giao diện người dùng (Swing UI thread)
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                VoGame voGame = new VoGame();
+                voGame.setVisible(true);
+            }
+        });
+    }
 
 }
 
