@@ -27,13 +27,29 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 public class GUIServer extends JFrame {
 
 	private JPanel contentPane;
 	private List<String> onlineUsers = new ArrayList<>();
+	private final List<ClientHandler> clients = new ArrayList<>();
 	/**
 	 * Launch the application.
 	 */
+	public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    GUIServer frame = new GUIServer();
+                    frame.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 	public GUIServer() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 358, 327);
@@ -59,6 +75,15 @@ public class GUIServer extends JFrame {
 		contentPane.add(btnNewButton);
 		
 		JButton btnNewButton_1 = new JButton("Tổng số người chơi");
+		btnNewButton_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				List<String> onlineUsers = getOnlineUsersFromDatabase();
+
+		        // Tạo một đối tượng Online và truyền danh sách người dùng online
+		        Online onlineDialog = new Online(onlineUsers);
+		        onlineDialog.setVisible(true);
+			}
+		});
 		btnNewButton_1.setBounds(21, 104, 187, 38);
 		contentPane.add(btnNewButton_1);
 		
@@ -89,63 +114,138 @@ public class GUIServer extends JFrame {
 		JTextPane textPane_2 = new JTextPane();
 		textPane_2.setBounds(170, 250, 149, 20);
 		contentPane.add(textPane_2);
+		// Khởi động máy chủ trong một luồng riêng biệt
+        Thread serverThread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    ServerSocket serverSocket = new ServerSocket(12346);
+                    System.out.println("Server is running...");
 
+                    while (true) {
+                        Socket clientSocket = serverSocket.accept();
+                        System.out.println("Client connected from: " + clientSocket.getInetAddress().getHostAddress());
+
+                        // Tạo một ClientHandler mới cho mỗi client và thêm vào danh sách
+                        ClientHandler clientHandler = new ClientHandler(clientSocket);
+                        clients.add(clientHandler);
+
+                        // Bắt đầu một luồng riêng biệt để xử lý client
+                        new Thread(clientHandler).start();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        serverThread.start(); // Khởi động máy chủ trong luồng riêng biệt
 		
 	}
 
 
-	public static void main(String[] args) {
-	    // Khởi động máy chủ trong một luồng riêng biệt
-		
-	    Thread serverThread = new Thread(new Runnable() {
-	        public void run() {
-	        	Connection connection = JDBCUtil.getConnection();
-	        	ServerSocket serverSocket = null;
-	            try {
-	            	serverSocket = new ServerSocket(12346);
-	                System.out.println("Server is running...");
+	private class ClientHandler implements Runnable {
+        private Socket clientSocket;
+        private InputStream inputStream;
+        private OutputStream outputStream;
 
-	                while (true) {
-	                	Socket clientSocket = serverSocket.accept();
-	                    System.out.println("Client connected from: " + clientSocket.getInetAddress().getHostAddress());
+        public ClientHandler(Socket clientSocket) {
+            this.clientSocket = clientSocket;
+        }
 
-	                    // Send a welcome message to the client
-	                    OutputStream outputStream = clientSocket.getOutputStream();
-	                    String welcomeMessage = "Connection successful! Welcome to the server.";
-	                    outputStream.write(welcomeMessage.getBytes());
+        @Override
+        public void run() {
+            try {
+                // Mở luồng vào/ra cho client
+                inputStream = clientSocket.getInputStream();
+                outputStream = clientSocket.getOutputStream();
 
-	                    clientSocket.close();
-	                    
-	                }
-	            } catch (IOException e) {
-	                e.printStackTrace();
-	            } finally {
-	                try {
-	                    if (serverSocket != null && !serverSocket.isClosed()) {
-	                        serverSocket.close();
-	                        JDBCUtil.closeConnection(connection);
-	                    }
-	                } catch (IOException e) {
-	                    e.printStackTrace();
-	                }
-	            }
+                // Xử lý tương tác với client trong suốt quá trình chơi game
+                // Ví dụ: đọc dữ liệu từ client và gửi phản hồi
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                // Khi client thoát, loại bỏ khỏi danh sách và đóng kết nối
+                clients.remove(this);
+                closeConnection();
+            }
+        }
+
+        private void closeConnection() {
+            try {
+                inputStream.close();
+                outputStream.close();
+                clientSocket.close();
+                System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+	private List<String> getOnlineUsersFromDatabase() {
+	    List<String> onlineUsers = new ArrayList<>();
+	    Connection connection = JDBCUtil.getConnection();
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
+
+	    try {
+	        String sql = "SELECT username FROM nameid WHERE isonline = 1";
+	        preparedStatement = connection.prepareStatement(sql);
+	        resultSet = preparedStatement.executeQuery();
+
+	        while (resultSet.next()) {
+	            String username = resultSet.getString("username");
+	            onlineUsers.add(username);
 	        }
-	    });
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
 
-	    serverThread.start(); // Khởi động máy chủ trong luồng riêng biệt
+	    return onlineUsers;
+	}
+	// Trong Server (phần ghép cặp thành công)
+	// Trong Server
+	public class MatchmakingServer {
+	    private Map<String, String> waitingPlayers = new HashMap<>();
 
-	    // Tạo và hiển thị giao diện
-	    EventQueue.invokeLater(new Runnable() {
-	        public void run() {
-	            try {
-	                GUIServer frame = new GUIServer();
-	                frame.setVisible(true);
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	            }
+	    public void startMatchmaking(String username) {
+	        waitingPlayers.put(username, username);
+
+	        if (waitingPlayers.size() >= 2) {
+	            // Ghép cặp hai người chơi
+	            Iterator<String> iterator = waitingPlayers.keySet().iterator();
+	            String player1 = iterator.next();
+	            String player2 = iterator.next();
+
+	            // Gửi thông báo ghép cặp đến cả hai người chơi
+	            sendMatchmakingSuccess(player1, player2);
+
+	            // Xóa người chơi khỏi danh sách đang chờ
+	            iterator.remove();
+	            iterator.remove();
 	        }
-	    });
-	}}
+	    }
+
+	    private void sendMatchmakingSuccess(String player1, String player2) {
+	        // Gửi thông báo đến client rằng họ đã được ghép cặp
+	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
+	    }
+	}
+
+	// Trong Client (ở phần xử lý sự kiện của nút "Tìm trận")
+	public class MatchmakingClient {
+	    public void startMatchmaking() {
+	        // Gửi yêu cầu ghép cặp đến server khi người chơi ấn nút "Tìm trận"
+	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
+	    }
+	}
+
+
+}
 
 
 	

@@ -15,7 +15,7 @@ public class Client {
             InputStream inputStream = socket.getInputStream();
             byte[] buffer = new byte[1024];
             int bytesRead = inputStream.read(buffer);
-            String welcomeMessage = new String(buffer, 0, bytesRead);
+            String welcomeMessage = bytesRead != -1 ? new String(buffer, 0, bytesRead) : "";
             System.out.println("Server says: " + welcomeMessage);
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {

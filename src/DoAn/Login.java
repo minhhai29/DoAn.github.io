@@ -29,7 +29,6 @@ public class Login extends JFrame {
 	private JPanel contentPane;
 	private JTextField textField;
 	private JPasswordField passwordField;
-	private int userId;
 
 	/**
 	 * Launch the application.
@@ -50,9 +49,6 @@ public class Login extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public int getUserId() {
-        return userId;
-    }
 	public Login() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -105,7 +101,6 @@ public class Login extends JFrame {
 			            resultSet = preparedStatement.executeQuery();
 
 			            if (resultSet.next()) {
-			            	String loggedInUsername = resultSet.getString("username");
 			            	int userId = resultSet.getInt("id");
 			                updateOnlineStatus(userId, 1); // 1 là trạng thái đang online
 			                // Đăng nhập thành công, mở giao diện HomePage

@@ -32,6 +32,8 @@ public class HomePage extends JFrame {
 	private Timer timer;
     private JLabel lblNewLabel_5;
     private int userId;
+    private String playerName;
+    private JLabel lblNewLabel_1;
 	/**
 	 * Launch the application.
 	 */
@@ -47,9 +49,11 @@ public class HomePage extends JFrame {
 			}
 		});
 	}
-	public void setUserId(int userId) {
-        this.userId = userId;
-    }
+	public void setUserId(int userId, String playerName) {
+	    this.userId = userId;
+	    this.playerName = playerName;
+	    setPlayerName(playerName);
+	}
 	/**
 	 * Create the frame.
 	 */
@@ -104,11 +108,10 @@ public class HomePage extends JFrame {
 		btnNewButton_2.setBounds(321, 18, 115, 59);
 		btnNewButton_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-		                updateOnlineStatus(userId, 0);
-		                Login LoginFrame = new Login();
-		                LoginFrame.setVisible(true);
-		                dispose();
+				updateOnlineStatus(userId, 0);
+			    Login loginFrame = new Login();
+			    loginFrame.setVisible(true);
+			    dispose();
 				
 			}
 		});
@@ -155,4 +158,7 @@ public class HomePage extends JFrame {
 	    }
 	}
 
+	public void setPlayerName(String playerName) {
+        lblNewLabel_1.setText("Tên người chơi: " + playerName);
+    }
 }

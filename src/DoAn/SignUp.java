@@ -114,7 +114,7 @@ public class SignUp extends JFrame {
 		                return; // Không tiếp tục nếu email đã tồn tại
 		            }
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
-			        String sql = "INSERT INTO nameid (username,password,email) VALUES (?,?,?)";
+			        String sql = "INSERT INTO nameid (username,password,email,isonline) VALUES (?,?,?,0)";
 
 			        // Tạo một PreparedStatement cho bảng câu hỏi
 			        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
