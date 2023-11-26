@@ -6,8 +6,8 @@ import javax.mail.internet.*;
 
 public class EmailSender {
     public static void sendEmail(String toEmail, String otp) {
-        final String username = "your_email@gmail.com";
-        final String password = "your_email_password";
+        final String username = "hocvieniqltm";
+        final String password = "tjtwhrjbxwiykczg";
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -30,7 +30,6 @@ public class EmailSender {
 
             Transport.send(message);
 
-            System.out.println("Email sent successfully!");
 
         } catch (MessagingException e) {
             // Thêm xử lý ngoại lệ hoặc logging tại đây
