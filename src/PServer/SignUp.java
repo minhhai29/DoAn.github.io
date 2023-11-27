@@ -112,6 +112,7 @@ public class SignUp extends JFrame {
 		                } else if (rdbtnNewRadioButton_2.isSelected()) {
 		                    gender = "O";
 		                }
+		                
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
 			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch) VALUES (?,?,?,0,?,0,0,0)";
 
@@ -133,32 +134,33 @@ public class SignUp extends JFrame {
                     preparedStatement.setString(2, hashedPassword);
 			        String email = textField.getText();
 			        preparedStatement.setString(3, email);
+			        preparedStatement.setString(4, gender);
 			        EmailSender.sendEmail(email, generatedOTP);
 			        String enteredOTP = JOptionPane.showInputDialog("Nhập mã OTP đã gửi đến email của bạn:");
 			        if (enteredOTP != null && enteredOTP.equals(generatedOTP)) {
 	                    // Nếu đúng, tiến hành đăng ký
 	                    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
+	                    int rowsAffected = preparedStatement.executeUpdate();
+	                    if (rowsAffected > 0) {
+				        	Login loginFrame = new Login();
+			                loginFrame.setVisible(true);
+			                dispose();
+
+				            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+				            if (generatedKeys.next()) {
+				                int nameId = generatedKeys.getInt(1);
+				                
+				               
+				        } 
+				        }
 	                } else {
 	                    // Nếu sai, hiển thị thông báo lỗi
 	                    JOptionPane.showMessageDialog(null, "Xác nhận không thành công. Vui lòng thử lại.");
 	                }
 			        preparedStatement.setString(4, gender);
-			        int rowsAffected = preparedStatement.executeUpdate();
 			        
 			        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
-			        if (rowsAffected > 0) {
-			        	Login loginFrame = new Login();
-		                loginFrame.setVisible(true);
-		                dispose();
-
-			            // Lấy ID của câu hỏi vừa thêm vào
-			            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
-			            if (generatedKeys.next()) {
-			                int nameId = generatedKeys.getInt(1);
-			                
-			               
-			        } 
-			        }
+			        
 			    } catch (SQLException ex) {
 			        ex.printStackTrace();
 			    } finally {

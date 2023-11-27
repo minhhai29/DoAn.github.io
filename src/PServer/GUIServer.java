@@ -156,7 +156,6 @@ public class GUIServer extends JFrame {
 	    public ClientHandler(Socket clientSocket) {
 	        this.clientSocket = clientSocket;
 	    }
-
 	    @Override
 	    public void run() {
 	        try {
@@ -329,7 +328,6 @@ public class GUIServer extends JFrame {
 	// Trong Server
 	public class MatchmakingServer {
 	    private Map<String, String> waitingPlayers = new HashMap<>();
-
 	    public void startMatchmaking(String username) {
 	        waitingPlayers.put(username, username);
 
@@ -339,31 +337,16 @@ public class GUIServer extends JFrame {
 	            String player1 = iterator.next();
 	            String player2 = iterator.next();
 
-	            // Gửi thông báo ghép cặp đến cả hai người chơi
-	            sendMatchmakingSuccess(player1, player2);
 
 	            // Xóa người chơi khỏi danh sách đang chờ
 	            iterator.remove();
 	            iterator.remove();
+	            VoGame voGame = new VoGame(player1,player2);
+	            voGame.setVisible(true);
 	        }
-	    }
-
-	    private void sendMatchmakingSuccess(String player1, String player2) {
-	    	openVoGame(player1);
-	        openVoGame(player2);
 	    }
 	}
 
-	
-	private void openVoGame(String username) {
-        // Mở giao diện VoGame trong luồng giao diện người dùng (Swing UI thread)
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                VoGame voGame = new VoGame();
-                voGame.setVisible(true);
-            }
-        });
-    }
 
 }
 

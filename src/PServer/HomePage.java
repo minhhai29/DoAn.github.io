@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import PServer.GUIServer.MatchmakingServer;
 import database.JDBCUtil;
 
 import javax.swing.JLabel;
@@ -29,6 +30,10 @@ public class HomePage extends JFrame {
 	private Timer timer;
     private JLabel lblNewLabel_5;
     private JLabel lblNewLabel_1; 
+    private MatchmakingServer matchmakingServer;
+    private String playerName; // Biến instance để lưu trữ playerName
+
+
 	/**
 	 * Launch the application.
 	 */
@@ -44,12 +49,12 @@ public class HomePage extends JFrame {
 			}
 		});
 	}
-	
-
 	/**
 	 * Create the frame.
 	 */
 	public HomePage(String playerName) {
+		this.playerName = playerName;
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 483, 378);
 		contentPane = new JPanel();
@@ -139,6 +144,7 @@ public class HomePage extends JFrame {
 		JLabel lblNewLabel_4 = new JLabel("Nhấn");
 		lblNewLabel_4.setBounds(265, 211, 46, 14);
 		contentPane.add(lblNewLabel_4);
+		
 	}
 	private void startTimer() {
 		if (lblNewLabel_5 == null) {
@@ -155,10 +161,11 @@ public class HomePage extends JFrame {
                 secondsPassed++;
                 int remainingTime = totalTime - secondsPassed;
                 lblNewLabel_5.setText("Thời gian bắt đầu " + remainingTime + " giây");
+                matchmakingServer.startMatchmaking(playerName);
                 if (remainingTime <= 0) {
                     timer.stop();
                     resetTimer();
-                }
+                } 
             }
         });
         if (!timer.isRunning()) {

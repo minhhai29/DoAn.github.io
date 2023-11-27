@@ -7,6 +7,9 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+
+import PServer.GUIServer.MatchmakingServer;
+
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.Font;
@@ -14,13 +17,13 @@ import java.awt.Font;
 public class VoGame extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
-
+	private MatchmakingServer matchmakingServer;
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
 		try {
-			VoGame dialog = new VoGame();
+			VoGame dialog = new VoGame("","");
 			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			dialog.setVisible(true);
 		} catch (Exception e) {
@@ -31,7 +34,7 @@ public class VoGame extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public VoGame() {
+	public VoGame(String player1, String player2) {
 		setBounds(100, 100, 450, 300);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
