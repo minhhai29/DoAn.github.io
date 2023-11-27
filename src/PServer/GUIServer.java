@@ -36,6 +36,9 @@ public class GUIServer extends JFrame {
 	private JPanel contentPane;
 	private List<String> onlineUsers = new ArrayList<>();
 	private final List<ClientHandler> clients = new ArrayList<>();
+	Map<String, Integer> highestPointPlayer = getPlayerWithHighestPoint();
+	Map<String, Integer> highestWinStreakPlayer = getPlayerWithHighestWinStreak();
+	Map<String, Integer> highestTotalMatchPlayer = getPlayerWithHighestTotalMatch();
 	/**
 	 * Launch the application.
 	 */
@@ -92,29 +95,33 @@ public class GUIServer extends JFrame {
 		btnNewButton_2.setBounds(21, 153, 149, 23);
 		contentPane.add(btnNewButton_2);
 		
-		JLabel lblNewLabel_1 = new JLabel("Người tham gia nhiều nhất");
-		lblNewLabel_1.setBounds(25, 188, 135, 14);
-		contentPane.add(lblNewLabel_1);
+		for (Map.Entry<String, Integer> entry : highestTotalMatchPlayer.entrySet()) {
+		    String username = entry.getKey();
+		    int totalMatch = entry.getValue();
+
+		    JLabel lblNewLabel_1 = new JLabel("Tham gia nhiều nhất: " + username + " số trận đã chơi: " + totalMatch );
+			lblNewLabel_1.setBounds(25, 188, 300, 14);
+			contentPane.add(lblNewLabel_1);
+		}
 		
-		JTextPane textPane = new JTextPane();
-		textPane.setBounds(170, 188, 149, 20);
-		contentPane.add(textPane);
 		
-		JLabel lblNewLabel_2 = new JLabel("Người thắng nhiều nhất");
-		lblNewLabel_2.setBounds(25, 225, 135, 14);
-		contentPane.add(lblNewLabel_2);
+		for (Map.Entry<String, Integer> entry : highestPointPlayer.entrySet()) {
+			String username = entry.getKey();
+		    int point = entry.getValue();
+			JLabel lblNewLabel_2 = new JLabel("Người điểm cao nhất:   " + username + " với " + point + " điểm");
+			lblNewLabel_2.setBounds(25, 220, 300, 14);
+			contentPane.add(lblNewLabel_2);
+		}
 		
-		JTextPane textPane_1 = new JTextPane();
-		textPane_1.setBounds(170, 219, 149, 20);
-		contentPane.add(textPane_1);
+		for (Map.Entry<String, Integer> entry : highestWinStreakPlayer.entrySet()) {
+			String username = entry.getKey();
+		    int winstreak = entry.getValue();
+			JLabel lblNewLabel_3 = new JLabel("Chuỗi thắng dài nhất:   " + username + " với chuỗi "+ winstreak);
+			lblNewLabel_3.setBounds(25, 256, 300, 14);
+			contentPane.add(lblNewLabel_3);
+		}
 		
-		JLabel lblNewLabel_3 = new JLabel("Chuỗi thắng dài nhất");
-		lblNewLabel_3.setBounds(25, 256, 126, 14);
-		contentPane.add(lblNewLabel_3);
 		
-		JTextPane textPane_2 = new JTextPane();
-		textPane_2.setBounds(170, 250, 149, 20);
-		contentPane.add(textPane_2);
 		// Khởi động máy chủ trong một luồng riêng biệt
 		Thread serverThread = new Thread(() -> {
 		    try (ServerSocket serverSocket = new ServerSocket(2911)) {
@@ -239,7 +246,85 @@ public class GUIServer extends JFrame {
 
 	    return allUsers;
 	}
-	
+	private Map<String, Integer> getPlayerWithHighestTotalMatch() {
+	    Map<String, Integer> result = new HashMap<>();
+	    Connection connection = JDBCUtil.getConnection();
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
+
+	    try {
+	        String sql = "SELECT username, totalmatch FROM nameid ORDER BY totalmatch DESC LIMIT 1";
+	        preparedStatement = connection.prepareStatement(sql);
+	        resultSet = preparedStatement.executeQuery();
+
+	        if (resultSet.next()) {
+	            String username = resultSet.getString("username");
+	            int totalMatch = resultSet.getInt("totalmatch");
+	            result.put(username, totalMatch);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+
+	    return result;
+	}
+	private Map<String, Integer> getPlayerWithHighestPoint() {
+		Map<String, Integer> result = new HashMap<>();
+	    Connection connection = JDBCUtil.getConnection();
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
+
+	    try {
+	        String sql = "SELECT username, point FROM nameid ORDER BY point DESC LIMIT 1";
+	        preparedStatement = connection.prepareStatement(sql);
+	        resultSet = preparedStatement.executeQuery();
+
+	        if (resultSet.next()) {
+	            String username = resultSet.getString("username");
+	            int totalMatch = resultSet.getInt("point");
+	            result.put(username, totalMatch);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+
+	    return result;
+	}
+
+	private Map<String, Integer> getPlayerWithHighestWinStreak() {
+		Map<String, Integer> result = new HashMap<>();
+	    Connection connection = JDBCUtil.getConnection();
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
+
+	    try {
+	        String sql = "SELECT username, winstreak FROM nameid ORDER BY winstreak DESC LIMIT 1";
+	        preparedStatement = connection.prepareStatement(sql);
+	        resultSet = preparedStatement.executeQuery();
+
+	        if (resultSet.next()) {
+	            String username = resultSet.getString("username");
+	            int totalMatch = resultSet.getInt("winstreak");
+	            result.put(username, totalMatch);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+
+	    return result;
+	}
 	// Trong Server (phần ghép cặp thành công)
 	// Trong Server
 	public class MatchmakingServer {

@@ -142,22 +142,36 @@ public class HomePage extends JFrame {
 	}
 	private void startTimer() {
 		if (lblNewLabel_5 == null) {
-	        lblNewLabel_5 = new JLabel("Thời gian bắt đầu 0 giây");
+			
+	        lblNewLabel_5 = new JLabel("Thời gian bắt đầu 60 giây");
 	        lblNewLabel_5.setFont(new Font("Tahoma", Font.BOLD, 12));
 	        lblNewLabel_5.setBounds(265, 292, 171, 14);
 	        contentPane.add(lblNewLabel_5);
 	    }
+		final int totalTime = 60;
         timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 secondsPassed++;
-                lblNewLabel_5.setText("Thời gian bắt đầu " + secondsPassed + " giây");
+                int remainingTime = totalTime - secondsPassed;
+                lblNewLabel_5.setText("Thời gian bắt đầu " + remainingTime + " giây");
+                if (remainingTime <= 0) {
+                    timer.stop();
+                    resetTimer();
+                }
             }
         });
         if (!timer.isRunning()) {
             timer.start();
         }
     }
+	private void resetTimer() {
+	    if (timer != null && timer.isRunning()) {
+	        timer.stop();
+	    }
+	    secondsPassed = 0;
+	    lblNewLabel_5.setText("Thời gian bắt đầu 60 giây");
+	}
 	private static void updateOnlineStatus(int userId, int status) {
 	    Connection connection = null;
 	    PreparedStatement preparedStatement = null;

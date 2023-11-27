@@ -23,7 +23,9 @@ public class SignUp extends JFrame {
 	 private JPanel contentPane;
 	    private JTextField textField;
 	    private JTextField textField_2;
+	    private final JRadioButton rdbtnNewRadioButton = new JRadioButton("Nam");
 	    private final JRadioButton rdbtnNewRadioButton_1 = new JRadioButton("Nữ");
+	    private final JRadioButton rdbtnNewRadioButton_2 = new JRadioButton("Other");
 	    private JPasswordField passwordField;
 	    private ButtonGroup genderButtonGroup = new ButtonGroup();
 	    /**
@@ -98,8 +100,20 @@ public class SignUp extends JFrame {
 		                JOptionPane.showMessageDialog(null, "Email đã tồn tại. Vui lòng sử dụng email khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
 		                return; // Không tiếp tục nếu email đã tồn tại
 		            }
+					if (isUsernameExists(connection, textField_2.getText())) {
+                        JOptionPane.showMessageDialog(null, "Tên người dùng đã tồn tại. Vui lòng chọn tên khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        return; // Không tiếp tục nếu tên người dùng đã tồn tại
+                    }
+					 String gender = "";
+		                if (rdbtnNewRadioButton.isSelected()) {
+		                    gender = "M";
+		                } else if (rdbtnNewRadioButton_1.isSelected()) {
+		                    gender = "F";
+		                } else if (rdbtnNewRadioButton_2.isSelected()) {
+		                    gender = "O";
+		                }
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
-			        String sql = "INSERT INTO nameid (username,password,email,isonline) VALUES (?,?,?,0)";
+			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch) VALUES (?,?,?,0,?,0,0,0)";
 
 			        // Tạo một PreparedStatement cho bảng câu hỏi
 			        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -128,6 +142,7 @@ public class SignUp extends JFrame {
 	                    // Nếu sai, hiển thị thông báo lỗi
 	                    JOptionPane.showMessageDialog(null, "Xác nhận không thành công. Vui lòng thử lại.");
 	                }
+			        preparedStatement.setString(4, gender);
 			        int rowsAffected = preparedStatement.executeUpdate();
 			        
 			        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
@@ -158,7 +173,6 @@ public class SignUp extends JFrame {
 		btnNewButton.setBounds(285, 212, 89, 23);
 		contentPane.add(btnNewButton);
 		
-		JRadioButton rdbtnNewRadioButton = new JRadioButton("Nam");
         rdbtnNewRadioButton.setBounds(117, 170, 54, 23);
         contentPane.add(rdbtnNewRadioButton);
         genderButtonGroup.add(rdbtnNewRadioButton);
@@ -171,7 +185,6 @@ public class SignUp extends JFrame {
 		passwordField.setBounds(176, 104, 182, 20);
 		contentPane.add(passwordField);
 		
-		JRadioButton rdbtnNewRadioButton_2 = new JRadioButton("Other");
 
         rdbtnNewRadioButton_2.setBounds(238, 170, 109, 23);
         contentPane.add(rdbtnNewRadioButton_2);
@@ -198,7 +211,24 @@ public class SignUp extends JFrame {
 		        JOptionPane.showMessageDialog(null, "Vui lòng nhập đầy đủ thông tin.", "Lỗi", JOptionPane.ERROR_MESSAGE);
 		        return false;
 		    }
+		    if (!email.matches(".+@gmail\\.com")) {
+		        JOptionPane.showMessageDialog(null, "Email phải có định dạng @gmail.com.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }
 
+		    // Kiểm tra độ dài mật khẩu (tối thiểu 6 kí tự)
+		    if (password.length() < 6) {
+		        JOptionPane.showMessageDialog(null, "Mật khẩu phải có ít nhất 6 kí tự.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }
+
+		    // Kiểm tra xem mật khẩu có ít nhất một chữ cái và một số không
+		    if (!password.matches(".*[a-zA-Z].*") || !password.matches(".*\\d.*")) {
+		        JOptionPane.showMessageDialog(null, "Mật khẩu phải chứa ít nhất một chữ cái và một số.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+		        return false;
+		    }
+
+		    // Kiểm tra định dạng tên người dùng (viết hoa chữ cái đầu)
 		    return true;
 		}
 	    public class PasswordHasher {
@@ -245,4 +275,17 @@ public class SignUp extends JFrame {
 	    }
 	    // Thêm biến để lưu trữ OTP
 	    private String generatedOTP;
+	    private boolean isUsernameExists(Connection connection, String username) throws SQLException {
+	        String query = "SELECT COUNT(*) FROM nameid WHERE username=?";
+	        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+	            preparedStatement.setString(1, username);
+	            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+	                if (resultSet.next()) {
+	                    int count = resultSet.getInt(1);
+	                    return count > 0;
+	                }
+	            }
+	        }
+	        return false;
+	    }
 }
