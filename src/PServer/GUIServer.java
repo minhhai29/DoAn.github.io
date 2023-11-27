@@ -1,9 +1,12 @@
 package PServer;
 
+import java.io.*;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import java.security.*;
+
 import java.awt.EventQueue;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Connection;
@@ -11,7 +14,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.net.InetAddress;
+import javax.net.ssl.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -31,17 +38,22 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Base64;
+
 public class GUIServer extends JFrame {
 
 	private JPanel contentPane;
 	private List<String> onlineUsers = new ArrayList<>();
 	private final List<ClientHandler> clients = new ArrayList<>();
-	Map<String, Integer> highestPointPlayer = getPlayerWithHighestPoint();
-	Map<String, Integer> highestWinStreakPlayer = getPlayerWithHighestWinStreak();
-	Map<String, Integer> highestTotalMatchPlayer = getPlayerWithHighestTotalMatch();
-	/**
-	 * Launch the application.
-	 */
+    private Map<String, Integer> highestPointPlayer = getPlayerWithHighestPoint();
+    private Map<String, Integer> highestWinStreakPlayer = getPlayerWithHighestWinStreak();
+    private Map<String, Integer> highestTotalMatchPlayer = getPlayerWithHighestTotalMatch();
+    private KeyPair serverKeyPair;
+    
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
 	public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -54,6 +66,7 @@ public class GUIServer extends JFrame {
             }
         });
     }
+	
 	public GUIServer() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 358, 327);
@@ -121,6 +134,14 @@ public class GUIServer extends JFrame {
 			contentPane.add(lblNewLabel_3);
 		}
 		
+        // Khởi tạo cặp khóa RSA cho máy chủ
+        try {
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
+            keyPairGenerator.initialize(2048, new SecureRandom());
+            serverKeyPair = keyPairGenerator.generateKeyPair();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 		
 		// Khởi động máy chủ trong một luồng riêng biệt
 		Thread serverThread = new Thread(() -> {
@@ -152,7 +173,8 @@ public class GUIServer extends JFrame {
 	    private Socket clientSocket;
 	    private InputStream inputStream;
 	    private OutputStream outputStream;
-
+        private PublicKey clientPublicKey;
+        
 	    public ClientHandler(Socket clientSocket) {
 	        this.clientSocket = clientSocket;
 	    }
@@ -163,6 +185,9 @@ public class GUIServer extends JFrame {
 	            // Mở luồng vào/ra cho client
 	            inputStream = clientSocket.getInputStream();
 	            outputStream = clientSocket.getOutputStream();
+	            
+                // Thực hiện giao tiếp key RSA
+                performRSAKeyExchange();
 
 	            // Xử lý tương tác với client trong suốt quá trình chơi game
 	            // Ví dụ: đọc dữ liệu từ client và gửi phản hồi
@@ -175,6 +200,33 @@ public class GUIServer extends JFrame {
 	            closeConnection();
 	        }
 	    }
+	    
+        private void performRSAKeyExchange() {
+            try {
+                // Gửi khóa công khai của máy chủ đến client
+                String encodedServerPublicKey = RSA.encodePublicKey(serverKeyPair.getPublic());
+                sendToClient(encodedServerPublicKey);
+
+                // Nhận khóa công khai của client
+                String encodedClientPublicKey = receiveFromClient();
+                clientPublicKey = RSA.decodePublicKey(encodedClientPublicKey);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        
+        private void sendToClient(String data) throws Exception {
+            byte[] encryptedData = RSA.encrypt(clientPublicKey, data.getBytes());
+            outputStream.write(encryptedData);
+            outputStream.flush();
+        }
+
+        private String receiveFromClient() throws Exception {
+            byte[] encryptedData = new byte[2048];
+            int bytesRead = inputStream.read(encryptedData);
+            byte[] decryptedData = RSA.decrypt(serverKeyPair.getPrivate(), encryptedData);
+            return new String(decryptedData, 0, bytesRead);
+        }
 
 	    private void closeConnection() {
 	        try {
