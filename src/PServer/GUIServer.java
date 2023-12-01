@@ -31,12 +31,15 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.io.ObjectOutputStream;
 public class GUIServer extends JFrame {
-
+	private static final int TIMEOUT_MINUTES = 1;
 	private JPanel contentPane;
 	private List<String> onlineUsers = new ArrayList<>();
-	private final List<ClientHandler> clients = new ArrayList<>();
-	private List<ClientHandler> waitingRoom = new ArrayList<>();
+	private static final List<ClientHandler> clients = new ArrayList<>();
 	Map<String, Integer> highestPointPlayer = getPlayerWithHighestPoint();
 	Map<String, Integer> highestWinStreakPlayer = getPlayerWithHighestWinStreak();
 	Map<String, Integer> highestTotalMatchPlayer = getPlayerWithHighestTotalMatch();
@@ -125,28 +128,53 @@ public class GUIServer extends JFrame {
 		
 		// Khởi động máy chủ trong một luồng riêng biệt
 		Thread serverThread = new Thread(() -> {
-		    try (ServerSocket serverSocket = new ServerSocket(2911)) {
-		        System.out.println("Server is running...");
+            try (ServerSocket serverSocket = new ServerSocket(2911)) {
+                ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+                executorService.scheduleAtFixedRate(() -> checkAndClose(serverSocket), 0, 1, TimeUnit.MINUTES);
 
-		        while (true) {
-		            Socket clientSocket = serverSocket.accept();
-		            System.out.println("Client connected from: " + clientSocket.getInetAddress().getHostAddress());
+                System.out.println("Server is waiting for connections...");
 
-		            // Tạo một ClientHandler mới cho mỗi client và thêm vào danh sách
-		            ClientHandler clientHandler = new ClientHandler(clientSocket);
-		            clients.add(clientHandler);
+                while (true) {
+                    Socket clientSocket = serverSocket.accept();
+                    System.out.println("Client connected from: " + clientSocket.getInetAddress().getHostAddress());
 
-		            // Bắt đầu một luồng riêng biệt để xử lý client
-		            new Thread(clientHandler).start();
-		        }
-		    } catch (IOException e) {
-		        e.printStackTrace();
-		    }
-		});
+                    ClientHandler clientHandler = new ClientHandler(clientSocket);
+                    clients.add(clientHandler);
 
-        serverThread.start(); // Khởi động máy chủ trong luồng riêng biệt
-		
-	}
+                    new Thread(clientHandler).start();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        serverThread.start();
+    }
+
+    private static void checkAndClose(ServerSocket serverSocket) {
+        try {
+            if (serverSocket.isClosed() || serverSocket.accept() == null) {
+                System.out.println("No connections in the last " + TIMEOUT_MINUTES + " minutes. Closing server.");
+                closeServerGracefully(serverSocket);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void closeServerGracefully(ServerSocket serverSocket) {
+        try {
+            for (ClientHandler client : clients) {
+                client.closeConnection();
+            }
+
+            serverSocket.close();
+
+            System.exit(0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 	private class ClientHandler implements Runnable {
@@ -325,8 +353,53 @@ public class GUIServer extends JFrame {
 
 	    return result;
 	}
+	public class MatchmakingManager {
+	    private static List<String> playersInQueue = new ArrayList<>();
 
-}
+	    public static synchronized void addToQueue(String playerName) {
+	        playersInQueue.add(playerName);
+	        tryMatchmaking();
+	    }
+
+	    private static void tryMatchmaking() {
+	        // Kiểm tra xem có đủ người chơi để ghép cặp hay không
+	        if (playersInQueue.size() >= 2) {
+	            String player1 = playersInQueue.remove(0);
+	            String player2 = playersInQueue.remove(0);
+	            
+	            // Gửi thông báo đến cả hai người chơi với thông tin đối thủ
+	            notifyMatchedPlayers(player1, player2);
+	        }
+	    }
+
+	    private static void notifyMatchedPlayers(String player1, String player2) {
+	        // TODO: Gửi thông báo đến client để chuyển sang giao diện inGame
+	        // Ví dụ:
+	        sendMatchNotification(player1, player2);
+	        sendMatchNotification(player2, player1);
+	    }
+
+	    private static void sendMatchNotification(String playerName, String opponentName) {
+	    	try {
+	            ServerSocket serverSocket = new ServerSocket(2911); // Chọn một cổng phù hợp
+	            Socket socket = serverSocket.accept();
+
+	            // Gửi thông điệp ghép cặp tới client
+	            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+	            outputStream.writeObject("MATCH_FOUND:" + opponentName);
+
+	            // Đóng các resource
+	            outputStream.close();
+	            socket.close();
+	            serverSocket.close();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    }
+	}
+
+
 
 
 	

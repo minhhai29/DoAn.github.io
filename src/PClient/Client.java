@@ -10,7 +10,7 @@ public class Client {
     	Socket socket = null;
 
         try {
-        	socket = new Socket("192.168.63.187", 2911);
+        	socket = new Socket("192.168.254.166", 2911);
 
             // Receive the welcome message from the server
             InputStream inputStream = socket.getInputStream();

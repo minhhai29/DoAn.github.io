@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import PServer.GUIServer.MatchmakingManager;
 //import PServer.GUIServer.MatchmakingServer;
 import database.JDBCUtil;
 
@@ -29,9 +30,9 @@ public class HomePage extends JFrame {
 	private Timer timer;
     private JLabel lblNewLabel_5;
     private JLabel lblNewLabel_1; 
+    private JLabel lblNewLabel_2; 
     //private MatchmakingServer matchmakingServer;
     private String playerName; // Biến instance để lưu trữ playerName
-
 
 	/**
 	 * Launch the application.
@@ -74,10 +75,11 @@ public class HomePage extends JFrame {
         lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 12));
         contentPane.add(lblNewLabel_1);
 		
-		JLabel lblNewLabel_2 = new JLabel("Xếp hạng :");
-		lblNewLabel_2.setBounds(35, 102, 104, 23);
-		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 12));
-		contentPane.add(lblNewLabel_2);
+        lblNewLabel_2 = new JLabel("");
+        lblNewLabel_2.setBounds(35, 102, 104, 23);
+        lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 12));
+        contentPane.add(lblNewLabel_2);
+		displayRanking(playerName);
 		
 		JLabel lblNewLabel_3 = new JLabel("Điểm IQ :");
 		lblNewLabel_3.setBounds(35, 136, 104, 23);
@@ -94,6 +96,7 @@ public class HomePage extends JFrame {
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
                 startTimer();
+                MatchmakingManager.addToQueue(playerName);
             }
 		});
 		btnNewButton_1.setBounds(265, 236, 115, 45);
@@ -159,6 +162,7 @@ public class HomePage extends JFrame {
                 secondsPassed++;
                 int remainingTime = totalTime - secondsPassed;
                 lblNewLabel_5.setText("Thời gian bắt đầu " + remainingTime + " giây");
+                //sendMatchNotification(playerName, opponent);
                 //matchmakingServer.startMatchmaking(playerName);
                 if (remainingTime <= 0) {
                     timer.stop();
@@ -196,7 +200,45 @@ public class HomePage extends JFrame {
 	        JDBCUtil.closeConnection(connection);
 	    }
 	}
+	private void displayRanking(String playerName) {
+	    Connection connection = null;
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
 
-	
+	    try {
+	        connection = JDBCUtil.getConnection();
+	        String sql = "SELECT username, point FROM nameid ORDER BY point DESC";
+	        preparedStatement = connection.prepareStatement(sql);
+	        resultSet = preparedStatement.executeQuery();
+
+	        int rank = 1;
+
+	        while (resultSet.next()) {
+	            String username = resultSet.getString("username");
+	            int points = resultSet.getInt("point");
+
+	            if (username.equals(playerName)) {
+	            	lblNewLabel_2.setText("Xếp hạng: " + rank);
+	        		
+	                
+	                break;
+	            }
+
+	            rank++;
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+	}
+	private void notifyMatchedPlayers(String opponentName) {
+	    // TODO: Xử lý thông báo ghép cặp, chuyển sang giao diện inGame
+	    inGame gameFrame = new inGame(opponentName);
+	    gameFrame.setVisible(true);
+	    dispose();
+	}
 
 }
