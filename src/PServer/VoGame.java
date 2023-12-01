@@ -8,7 +8,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import PServer.GUIServer.MatchmakingServer;
+//import PServer.GUIServer.MatchmakingServer;
 
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -17,7 +17,7 @@ import java.awt.Font;
 public class VoGame extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
-	private MatchmakingServer matchmakingServer;
+	//private MatchmakingServer matchmakingServer;
 	/**
 	 * Launch the application.
 	 */

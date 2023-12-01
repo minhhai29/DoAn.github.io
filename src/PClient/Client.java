@@ -14,6 +14,8 @@ public class Client {
 
             // Receive the welcome message from the server
             InputStream inputStream = socket.getInputStream();
+            OutputStream outputStream = socket.getOutputStream();
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
             byte[] buffer = new byte[1024];
             int bytesRead = inputStream.read(buffer);
             String welcomeMessage = bytesRead != -1 ? new String(buffer, 0, bytesRead) : "Hello";
@@ -23,6 +25,8 @@ public class Client {
                     Login loginFrame = new Login(); // Tạo thể hiện của JFrame Login
                     loginFrame.setVisible(true); // Hiển thị JFrame
                 }
+                
+
             });
         } catch (IOException e) {
             e.printStackTrace();
@@ -36,11 +40,5 @@ public class Client {
             }
         }
     }
- // Trong Client (ở phần xử lý sự kiện của nút "Tìm trận")
- 	public class MatchmakingClient {
- 	    public void startMatchmaking() {
- 	        // Gửi yêu cầu ghép cặp đến server khi người chơi ấn nút "Tìm trận"
- 	        // Có thể sử dụng giao thức hoặc kênh giao tiếp cụ thể của bạn
- 	    }
- 	}
-}
+    
+    }
