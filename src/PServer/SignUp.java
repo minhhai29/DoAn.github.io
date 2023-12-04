@@ -11,6 +11,7 @@ import database.JDBCUtil;
 
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,8 +20,8 @@ import java.awt.event.ActionEvent;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 public class SignUp extends JFrame {
-
-	 private JPanel contentPane;
+		private static Socket socket;
+	 	private JPanel contentPane;
 	    private JTextField textField;
 	    private JTextField textField_2;
 	    private final JRadioButton rdbtnNewRadioButton = new JRadioButton("Nam");
@@ -35,7 +36,7 @@ public class SignUp extends JFrame {
 	        EventQueue.invokeLater(new Runnable() {
 	            public void run() {
 	                try {
-	                    SignUp frame = new SignUp();
+	                    SignUp frame = new SignUp(socket);
 	                    frame.setVisible(true);
 	                } catch (Exception e) {
 	                    e.printStackTrace();
@@ -47,7 +48,8 @@ public class SignUp extends JFrame {
 	    /**
 	     * Create the frame.
 	     */
-	    public SignUp() {
+	    public SignUp(Socket socket) {
+	    	this.socket = socket;
 	        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	        setBounds(100, 100, 450, 300);
 	        contentPane = new JPanel();
@@ -114,7 +116,7 @@ public class SignUp extends JFrame {
 		                }
 		                
 			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
-			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch) VALUES (?,?,?,0,?,0,0,0)";
+			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch,pointiq) VALUES (?,?,?,0,?,0,0,0,0)";
 
 			        // Tạo một PreparedStatement cho bảng câu hỏi
 			        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
@@ -142,7 +144,7 @@ public class SignUp extends JFrame {
 	                    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
 	                    int rowsAffected = preparedStatement.executeUpdate();
 	                    if (rowsAffected > 0) {
-				        	Login loginFrame = new Login();
+				        	Login loginFrame = new Login(socket);
 			                loginFrame.setVisible(true);
 			                dispose();
 
@@ -195,7 +197,7 @@ public class SignUp extends JFrame {
 		JButton btnNewButton_1 = new JButton("Trở lại");
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Login loginFrame = new Login(); // Tạo thể hiện của JFrame Signup
+				Login loginFrame = new Login(socket); // Tạo thể hiện của JFrame Signup
                 loginFrame.setVisible(true); // Hiển thị JFrame Signup
                 dispose();
 			}

@@ -16,6 +16,7 @@ import javax.swing.SwingConstants;
 import java.awt.Font;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,7 +30,7 @@ public class Login extends JFrame {
 	private JPanel contentPane;
 	private JTextField textField;
 	private JPasswordField passwordField;
-	
+	private static Socket socket;
 
 	/**
 	 * Launch the application.
@@ -38,7 +39,7 @@ public class Login extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Login frame = new Login();
+					Login frame = new Login(socket);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -50,7 +51,8 @@ public class Login extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public Login() {
+	public Login(Socket socket) {
+		this.socket = socket;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
@@ -107,7 +109,7 @@ public class Login extends JFrame {
 			            	int isol = resultSet.getInt("isonline");
 			                updateOnlineStatus(userId, 1); // 1 là trạng thái đang online
 			                // Đăng nhập thành công, mở giao diện HomePage
-			                HomePage homePage = new HomePage(playerName);
+			                HomePage homePage = new HomePage(playerName,socket);
 			                homePage.setVisible(true);
 			                dispose(); // Đóng frame đăng ký sau khi đăng nhập thành công
 			            } else {
@@ -130,7 +132,7 @@ public class Login extends JFrame {
 		JButton btnNewButton_1 = new JButton("Đăng ký");
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SignUp signupFrame = new SignUp(); // Tạo thể hiện của JFrame Signup
+				SignUp signupFrame = new SignUp(socket); // Tạo thể hiện của JFrame Signup
                 signupFrame.setVisible(true); // Hiển thị JFrame Signup
                 dispose(); // Đóng cửa sổ của JFrame Login sau khi chuyển qua JFrame Signup
 			}

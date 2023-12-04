@@ -1,44 +1,72 @@
 package PClient;
 
 import java.net.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.awt.EventQueue;
 import java.io.*;
+import org.jsoup.Connection;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.swing.SwingUtilities;
+import javax.crypto.SecretKey;
+import org.jsoup.Jsoup; // Import for Jsoup
+import org.jsoup.nodes.Document; // Import for Jsoup
+import org.json.JSONObject; // Import for JSONObject
 import PServer.Login;
 
 public class Client {
+	private static Socket socket;
+	private static String host;
+	private static Cipher aesEncryptCipher;
     public static void main(String[] args) {
-    	Socket socket = null;
+        new Thread(() -> runClient()).start();
+    }
 
+	private static void runClient() {
+		
         try {
-        	socket = new Socket("192.168.254.166", 2911);
+        	host = "192.168.254.81";
+            socket = new Socket(host, 2911);
 
-            // Receive the welcome message from the server
-            InputStream inputStream = socket.getInputStream();
-            OutputStream outputStream = socket.getOutputStream();
-            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-            byte[] buffer = new byte[1024];
-            int bytesRead = inputStream.read(buffer);
-            String welcomeMessage = bytesRead != -1 ? new String(buffer, 0, bytesRead) : "Hello";
-            System.out.println("Server says: " + welcomeMessage);
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    Login loginFrame = new Login(); // Tạo thể hiện của JFrame Login
-                    loginFrame.setVisible(true); // Hiển thị JFrame
-                }
+            // Receive the AES key from the server
+            ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
+            SecretKey aesKey = (SecretKey) objectInputStream.readObject();
+
+            // Mã hóa và giải mã dữ liệu với key AES
+            try {
+                aesEncryptCipher = Cipher.getInstance("AES");
+                aesEncryptCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
+                // Gửi dữ liệu cho server
+                String dataToSend = "Hello from client!";
+                byte[] encryptedData = aesEncryptCipher.doFinal(dataToSend.getBytes());
+                socket.getOutputStream().write(encryptedData);
                 
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        Login loginFrame = new Login(socket); // Tạo thể hiện của JFrame Login
+                        loginFrame.setVisible(true); // Hiển thị JFrame
+                    }
+                });
+            Cipher aesEncryptCipher = Cipher.getInstance("AES");
+            aesEncryptCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+            byte[] encryptedBye = aesEncryptCipher.doFinal("bye".getBytes());
+            socket.getOutputStream().write(encryptedBye);
+            // Xử lý phản hồi từ server và giải mã nếu cần thiết
 
-            });
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
+                NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
             e.printStackTrace();
         } finally {
-            try {
+        	try {
                 if (socket != null && !socket.isClosed()) {
                     socket.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-    
-    }
+        }}
+	

@@ -32,11 +32,24 @@ public class JDBCUtil {
 		}
 	}
 	public static void closeResultSet(ResultSet resultSet) {
-		// TODO Auto-generated method stub
+		try {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 		
 	}
 	public static void closeStatement(PreparedStatement preparedStatement) {
-		// TODO Auto-generated method stub
+		try {
+            if (preparedStatement != null) {
+                preparedStatement.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
 		
 	}
 	

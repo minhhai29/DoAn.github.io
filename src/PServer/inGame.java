@@ -3,18 +3,14 @@ package PServer;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -23,6 +19,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
+
 import database.JDBCUtil;
 
 import javax.swing.ButtonGroup;
@@ -40,7 +37,6 @@ public class inGame extends JFrame {
     private int score;
     private Timer timer;
     private int timeRemaining = 20;
-    private String opponentName;
     // Connection details for your database
     Connection connection = JDBCUtil.getConnection();
 
@@ -48,7 +44,7 @@ public class inGame extends JFrame {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    inGame frame = new inGame("");
+                    inGame frame = new inGame();
                     frame.setVisible(true);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -57,8 +53,7 @@ public class inGame extends JFrame {
         });
     }
 
-    public inGame(String opponentName) {
-    	this.opponentName = opponentName;
+    public inGame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 300);
         contentPane = new JPanel();
@@ -102,24 +97,7 @@ public class inGame extends JFrame {
         Collections.shuffle(questions);
         // Load the first question
         loadNextQuestion();
-        try {
-            Socket socket = new Socket("localhost", 12345); // Điền địa chỉ và cổng server
-            ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 
-            // Đọc thông điệp từ server
-            String message = (String) inputStream.readObject();
-            if (message.startsWith("MATCH_FOUND:")) {
-                String opponent = message.substring("MATCH_FOUND:".length());
-                this.opponentName = opponent;
-                lblScore.setText("Điểm của bạn: 0 | Thời gian: 20s - Đấu với: " + opponent);
-            }
-
-            // Đóng các resource
-            inputStream.close();
-            socket.close();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
         // Tạo và khởi chạy Timer
         timer = new Timer(1000, new ActionListener() {
             @Override
@@ -140,22 +118,7 @@ public class inGame extends JFrame {
         });
         timer.start(); // Bắt đầu đếm ngược
     }
-    private void notifyGameEndAndOpponentExit() {
-        // Gửi thông điệp tới server để thông báo rằng đối thủ đã thoát
-        try {
-            Socket socket = new Socket("localhost", 12345); // Điền địa chỉ và cổng server
-            ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
 
-            // Gửi thông điệp đối thủ đã thoát
-            outputStream.writeObject("OPPONENT_EXIT:" + opponentName);
-
-            // Đóng các resource
-            outputStream.close();
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     private void connectAndLoadQuestions() {
         questions = new ArrayList<>();
         try  {

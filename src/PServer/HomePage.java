@@ -6,17 +6,18 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import PServer.GUIServer.MatchmakingManager;
 //import PServer.GUIServer.MatchmakingServer;
 import database.JDBCUtil;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 
 import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.net.Socket;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -24,13 +25,14 @@ import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 import javax.swing.JDialog;
 public class HomePage extends JFrame {
-
+	private static Socket socket;
 	private JPanel contentPane;
 	private int secondsPassed = 0;
 	private Timer timer;
     private JLabel lblNewLabel_5;
     private JLabel lblNewLabel_1; 
     private JLabel lblNewLabel_2; 
+    private JLabel lblNewLabel_3; 
     //private MatchmakingServer matchmakingServer;
     private String playerName; // Biến instance để lưu trữ playerName
 
@@ -41,7 +43,7 @@ public class HomePage extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					HomePage frame = new HomePage("");
+					HomePage frame = new HomePage("", socket);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -52,9 +54,9 @@ public class HomePage extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public HomePage(String playerName) {
+	public HomePage(String playerName, Socket socket) {
 		this.playerName = playerName;
-
+		this.socket = socket;
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 483, 378);
 		contentPane = new JPanel();
@@ -81,13 +83,28 @@ public class HomePage extends JFrame {
         contentPane.add(lblNewLabel_2);
 		displayRanking(playerName);
 		
-		JLabel lblNewLabel_3 = new JLabel("Điểm IQ :");
+		lblNewLabel_3 = new JLabel("");
 		lblNewLabel_3.setBounds(35, 136, 104, 23);
 		lblNewLabel_3.setFont(new Font("Tahoma", Font.BOLD, 12));
 		contentPane.add(lblNewLabel_3);
+		displayIQPoints(playerName);
 		
 		JButton btnNewButton = new JButton("Bài test IQ");
 		btnNewButton.setBounds(60, 236, 115, 45);
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int iqPoints = getIqPoints(playerName);
+				if (iqPoints == 0) {
+		            // Mở giao diện ImageViewerFrame
+		            ImageViewerFrame ima = new ImageViewerFrame(playerName,socket);
+		            ima.setVisible(true);
+		            dispose();
+		        } else {
+		            // Hiển thị thông báo
+		            JOptionPane.showMessageDialog(HomePage.this, "Bạn đã kiểm tra IQ trước đó. Không thể thử lại.");
+		        }
+            }
+		});
 		
 		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		contentPane.add(btnNewButton);
@@ -96,7 +113,6 @@ public class HomePage extends JFrame {
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
                 startTimer();
-                MatchmakingManager.addToQueue(playerName);
             }
 		});
 		btnNewButton_1.setBounds(265, 236, 115, 45);
@@ -124,7 +140,7 @@ public class HomePage extends JFrame {
 		                // Lấy giá trị trường "id" từ ResultSet
 		                userId = resultSet.getInt("id");
 		                updateOnlineStatus(userId, 0);
-					    Login loginFrame = new Login();
+					    Login loginFrame = new Login(socket);
 					    loginFrame.setVisible(true);
 					    dispose();
 		            }
@@ -234,11 +250,37 @@ public class HomePage extends JFrame {
 	        JDBCUtil.closeConnection(connection);
 	    }
 	}
-	private void notifyMatchedPlayers(String opponentName) {
-	    // TODO: Xử lý thông báo ghép cặp, chuyển sang giao diện inGame
-	    inGame gameFrame = new inGame(opponentName);
-	    gameFrame.setVisible(true);
-	    dispose();
+	private int getIqPoints(String playerName) {
+	    Connection connection = null;
+	    PreparedStatement preparedStatement = null;
+	    ResultSet resultSet = null;
+	    int iqPoints = 0;
+
+	    try {
+	        connection = JDBCUtil.getConnection();
+	        String sql = "SELECT pointiq FROM nameid WHERE username=?";
+	        preparedStatement = connection.prepareStatement(sql);
+	        preparedStatement.setString(1, playerName);
+
+	        resultSet = preparedStatement.executeQuery();
+
+	        if (resultSet.next()) {
+	            iqPoints = resultSet.getInt("pointiq");
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        JDBCUtil.closeResultSet(resultSet);
+	        JDBCUtil.closeStatement(preparedStatement);
+	        JDBCUtil.closeConnection(connection);
+	    }
+
+	    return iqPoints;
+	}
+	private void displayIQPoints(String playerName) {
+	    int iqPoints = getIqPoints(playerName);
+	    lblNewLabel_3.setText("Điểm IQ: " + iqPoints);
 	}
 
 }

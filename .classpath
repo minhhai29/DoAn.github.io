@@ -10,5 +10,7 @@
 	<classpathentry kind="lib" path="C:/LTUDM/activation-1.1.1.jar"/>
 	<classpathentry kind="lib" path="C:/LTUDM/mysql-connector-java-8.0.26.jar"/>
 	<classpathentry kind="lib" path="C:/LTUDM/protobuf-java-3.11.4.jar"/>
+	<classpathentry kind="lib" path="C:/Users/admin/Downloads/json-20231013.jar"/>
+	<classpathentry kind="lib" path="C:/Users/admin/Downloads/jsoup-1.16.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
