@@ -14,6 +14,7 @@ import javax.swing.JOptionPane;
 
 import java.awt.Font;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
@@ -96,9 +97,11 @@ public class HomePage extends JFrame {
 				int iqPoints = getIqPoints(playerName);
 				if (iqPoints == 0) {
 		            // Mở giao diện ImageViewerFrame
-		            ImageViewerFrame ima = new ImageViewerFrame(playerName,socket);
-		            ima.setVisible(true);
-		            dispose();
+					SwingUtilities.invokeLater(() -> {
+						ImageViewerFrame ima = new ImageViewerFrame(playerName,socket);
+			            ima.setVisible(true);
+	                });
+		            
 		        } else {
 		            // Hiển thị thông báo
 		            JOptionPane.showMessageDialog(HomePage.this, "Bạn đã kiểm tra IQ trước đó. Không thể thử lại.");

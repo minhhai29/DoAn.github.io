@@ -79,15 +79,12 @@ public class ImageViewerFrame extends JFrame {
 
                 currentImageId++;
             } else {
-            	int result = JOptionPane.showConfirmDialog(this, "Quiz completed! Your score is: " + score + "\nDo you want to exit and open HomePage?", "End of Quiz", JOptionPane.OK_CANCEL_OPTION);
+            	int result = JOptionPane.showConfirmDialog(this, "Quiz completed! Your score is: " + score ,"End of Quiz", JOptionPane.OK_CANCEL_OPTION);
                 
                 if (result == JOptionPane.OK_OPTION) {
                     // Close current frame
                     dispose();
                     
-                    // Open HomePage frame
-                    HomePage homePage = new HomePage(playerName,socket);
-                    homePage.setVisible(true);
                     updateScoreInDatabase();
                 }
             }

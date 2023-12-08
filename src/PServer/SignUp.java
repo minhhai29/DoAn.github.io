@@ -144,9 +144,12 @@ public class SignUp extends JFrame {
 	                    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
 	                    int rowsAffected = preparedStatement.executeUpdate();
 	                    if (rowsAffected > 0) {
-				        	Login loginFrame = new Login(socket);
-			                loginFrame.setVisible(true);
-			                dispose();
+	                    	SwingUtilities.invokeLater(() -> {
+	                    		Login loginFrame = new Login(socket);
+				                loginFrame.setVisible(true);
+				                dispose();
+	                        });
+				        	
 
 				            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
 				            if (generatedKeys.next()) {

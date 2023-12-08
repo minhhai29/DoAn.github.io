@@ -21,14 +21,14 @@ public class Client {
 	private static Socket socket;
 	private static String host;
 	private static Cipher aesEncryptCipher;
-    public static void main(String[] args) {
+	public static void main(String[] args) {
         new Thread(() -> runClient()).start();
     }
 
 	private static void runClient() {
 		
         try {
-        	host = "192.168.254.81";
+        	host = "192.168.233.240";
             socket = new Socket(host, 2911);
 
             // Receive the AES key from the server
@@ -45,28 +45,27 @@ public class Client {
                 byte[] encryptedData = aesEncryptCipher.doFinal(dataToSend.getBytes());
                 socket.getOutputStream().write(encryptedData);
                 
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        Login loginFrame = new Login(socket); // Tạo thể hiện của JFrame Login
-                        loginFrame.setVisible(true); // Hiển thị JFrame
-                    }
+                SwingUtilities.invokeLater(() -> {
+                    Login loginFrame = new Login(socket); // Tạo thể hiện của JFrame Login
+                    loginFrame.setVisible(true); // Hiển thị JFrame
                 });
-            Cipher aesEncryptCipher = Cipher.getInstance("AES");
-            aesEncryptCipher.init(Cipher.ENCRYPT_MODE, aesKey);
-            byte[] encryptedBye = aesEncryptCipher.doFinal("bye".getBytes());
-            socket.getOutputStream().write(encryptedBye);
+                byte[] encryptedBye = aesEncryptCipher.doFinal("bye".getBytes());
+                socket.getOutputStream().write(encryptedBye);
             // Xử lý phản hồi từ server và giải mã nếu cần thiết
 
-        } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException |
-                NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
+        } } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-        	try {
+            try {
                 if (socket != null && !socket.isClosed()) {
                     socket.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }}
-	
+        }
+    }
+}

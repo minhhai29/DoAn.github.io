@@ -13,6 +13,8 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
 import java.awt.Font;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
@@ -109,9 +111,12 @@ public class Login extends JFrame {
 			            	int isol = resultSet.getInt("isonline");
 			                updateOnlineStatus(userId, 1); // 1 là trạng thái đang online
 			                // Đăng nhập thành công, mở giao diện HomePage
-			                HomePage homePage = new HomePage(playerName,socket);
-			                homePage.setVisible(true);
-			                dispose(); // Đóng frame đăng ký sau khi đăng nhập thành công
+			                SwingUtilities.invokeLater(() -> {
+				                HomePage homePage = new HomePage(playerName,socket);
+				                homePage.setVisible(true);
+				                dispose();
+			                });
+		 // Đóng frame đăng ký sau khi đăng nhập thành công
 			            } else {
 			                JOptionPane.showMessageDialog(null, "Tên người dùng hoặc mật khẩu không đúng.", "Lỗi", JOptionPane.ERROR_MESSAGE);
 			            }
@@ -132,9 +137,12 @@ public class Login extends JFrame {
 		JButton btnNewButton_1 = new JButton("Đăng ký");
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SignUp signupFrame = new SignUp(socket); // Tạo thể hiện của JFrame Signup
-                signupFrame.setVisible(true); // Hiển thị JFrame Signup
-                dispose(); // Đóng cửa sổ của JFrame Login sau khi chuyển qua JFrame Signup
+				SwingUtilities.invokeLater(() -> {
+					SignUp signupFrame = new SignUp(socket); // Tạo thể hiện của JFrame Signup
+	                signupFrame.setVisible(true); // Hiển thị JFrame Signup
+	                dispose(); // Đóng cửa sổ của JFrame Login sau khi chuyển qua JFrame Signup
+                });
+				
 			}
 		});
 		btnNewButton_1.setBounds(240, 169, 100, 23);

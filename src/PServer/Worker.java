@@ -38,12 +38,12 @@ public class Worker implements Runnable {
 	Map<String, Integer> highestTotalMatchPlayer = getPlayerWithHighestTotalMatch();
 	private List<String> onlineUsers = new ArrayList<>();
 	private List<String> allUsers = new ArrayList<>();
-	private Cipher aesEncryptCipher;
-    private Cipher aesDecryptCipher;
+	private ScheduledExecutorService executorService;
+	private static Worker instance;
 
 	public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(2911)) {
-            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+		try (ServerSocket serverSocket = new ServerSocket(2911)) {
+            executorService = Executors.newScheduledThreadPool(1);
             executorService.scheduleAtFixedRate(() -> checkAndClose(serverSocket), 0, 1, TimeUnit.MINUTES);
 
             System.out.println("Server is waiting for connections...");
@@ -57,23 +57,34 @@ public class Worker implements Runnable {
 
                 new Thread(clientHandler).start();
             }
+		} catch (SocketTimeoutException e) {
+            System.out.println("No connection within " + TIMEOUT_MINUTES + " minutes. Closing the server.");
+            closeServerGracefully();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (executorService != null && !executorService.isShutdown()) {
+                executorService.shutdown();
+            }
         }
     }
-
-    private static void closeServerGracefully(ServerSocket serverSocket) {
+	public static Worker getInstance() {
+        if (instance == null) {
+            instance = new Worker();
+        }
+        return instance;
+    }
+	private void closeServerGracefully() {
         try {
             for (ClientHandler client : clients) {
                 client.closeConnection();
             }
 
-            serverSocket.close();
-
             System.exit(0);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    
     }
     private class ClientHandler implements Runnable {
 	    private Socket clientSocket;
@@ -123,12 +134,15 @@ public class Worker implements Runnable {
                 byte[] encryptedData = new byte[1024];
                 int bytesRead = inputStream.read(encryptedData);
                 byte[] decryptedData = aesDecryptCipher.doFinal(encryptedData, 0, bytesRead);
+                if (bytesRead == -1) {
+                    // Client đã đóng kết nối
+                    System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
+                    closeConnection();
+                    return;
+                }
                 String clientMessage = new String(decryptedData);
                 System.out.println("Received from client: " + clientMessage);
 
-
-                // Xử lý dữ liệu từ client
-                handleClientData(clientMessage);
 
             } catch (IOException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
                 e.printStackTrace();
@@ -145,23 +159,16 @@ public class Worker implements Runnable {
 	    private byte[] decryptDataFromClient(byte[] encryptedData, int bytesRead) throws IllegalBlockSizeException, BadPaddingException {
 	        return aesDecryptCipher.doFinal(encryptedData, 0, bytesRead);
 	    }
-
-        private void handleClientData(String clientMessage) {
-            // Xử lý dữ liệu từ client ở đây, tùy thuộc vào yêu cầu của ứng dụng của bạn
-            System.out.println("Handling client data: " + clientMessage);
-        }
-        private void closeConnection() {
+	    private void closeConnection() {
 	        try {
 	            if (inputStream != null) {
 	                inputStream.close();
-	                
 	            }
 	            if (outputStream != null) {
 	                outputStream.close();
 	            }
 	            if (clientSocket != null && !clientSocket.isClosed()) {
 	                clientSocket.close();
-	                System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
 	            }
 	        } catch (IOException e) {
 	            e.printStackTrace();
@@ -324,17 +331,13 @@ public class Worker implements Runnable {
     }
     private static void checkAndClose(ServerSocket serverSocket) {
         try {
-            serverSocket.setSoTimeout(TIMEOUT_MINUTES * 60 * 1000); // Đặt thời gian chờ theo mili giây
-            Socket acceptedSocket = serverSocket.accept(); // Chấp nhận kết nối
-            // Nếu bạn đến đây, một kết nối đã được chấp nhận
-
-            // Thực hiện một số thao tác với socket đã chấp nhận nếu cần
+            serverSocket.setSoTimeout(TIMEOUT_MINUTES * 60 * 1000);
+            serverSocket.accept();
         } catch (SocketTimeoutException e) {
-            System.out.println("Không có kết nối trong " + TIMEOUT_MINUTES + " phút. Đang đóng máy chủ.");
-            closeServerGracefully(serverSocket);
+            System.out.println("No connection within " + TIMEOUT_MINUTES + " minutes. Closing the server.");
+            Worker.getInstance().closeServerGracefully();
         } catch (SocketException e) {
-            // Xử lý ngoại lệ socket đã đóng
-            System.out.println("Socket đã đóng. Máy chủ có thể đang tắt.");
+            System.out.println("Socket has closed. The server may be shutting down.");
         } catch (IOException e) {
             e.printStackTrace();
         }
