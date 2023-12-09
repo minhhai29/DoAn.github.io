@@ -1,26 +1,26 @@
 package PServer;
-
-import java.awt.EventQueue;
 import javax.swing.*;
 
 import java.util.Random;
-
-import javax.swing.border.EmptyBorder;
 
 import database.JDBCUtil;
 
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.EventQueue;
 import java.net.Socket;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JOptionPane;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.awt.event.ActionEvent;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 public class SignUp extends JFrame {
 		private static Socket socket;
+	    private Worker worker;
 	 	private JPanel contentPane;
 	    private JTextField textField;
 	    private JTextField textField_2;
@@ -28,7 +28,7 @@ public class SignUp extends JFrame {
 	    private final JRadioButton rdbtnNewRadioButton_1 = new JRadioButton("Nữ");
 	    private final JRadioButton rdbtnNewRadioButton_2 = new JRadioButton("Other");
 	    private JPasswordField passwordField;
-	    private ButtonGroup genderButtonGroup = new ButtonGroup();
+	    	private ButtonGroup genderButtonGroup = new ButtonGroup();
 	    /**
 	     * Launch the application.
 	     */
@@ -50,6 +50,7 @@ public class SignUp extends JFrame {
 	     */
 	    public SignUp(Socket socket) {
 	    	this.socket = socket;
+	        this.worker = new Worker();
 	        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	        setBounds(100, 100, 450, 300);
 	        contentPane = new JPanel();
@@ -93,87 +94,69 @@ public class SignUp extends JFrame {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(isInputValid()) {
-				Connection connection = JDBCUtil.getConnection();
-				PreparedStatement preparedStatement = null;
-				generatedOTP = generateOTP();
-				
-				try {
-					if (isEmailExists(connection, textField.getText())) {
-		                JOptionPane.showMessageDialog(null, "Email đã tồn tại. Vui lòng sử dụng email khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-		                return; // Không tiếp tục nếu email đã tồn tại
-		            }
-					if (isUsernameExists(connection, textField_2.getText())) {
-                        JOptionPane.showMessageDialog(null, "Tên người dùng đã tồn tại. Vui lòng chọn tên khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                        return; // Không tiếp tục nếu tên người dùng đã tồn tại
-                    }
-					 String gender = "";
-		                if (rdbtnNewRadioButton.isSelected()) {
-		                    gender = "M";
-		                } else if (rdbtnNewRadioButton_1.isSelected()) {
-		                    gender = "F";
-		                } else if (rdbtnNewRadioButton_2.isSelected()) {
-		                    gender = "O";
-		                }
-		                
-			        // Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
-			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch,pointiq) VALUES (?,?,?,0,?,0,0,0,0)";
+					generatedOTP = generateOTP();
+					if (worker.isEmailExists(textField.getText())) {
+					    JOptionPane.showMessageDialog(null, "Email đã tồn tại. Vui lòng sử dụng email khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+					    return; // Không tiếp tục nếu email đã tồn tại
+					}
+					if (worker.isUsernameExists(textField_2.getText())) {
+					    JOptionPane.showMessageDialog(null, "Tên người dùng đã tồn tại. Vui lòng chọn tên khác.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+					    return; // Không tiếp tục nếu tên người dùng đã tồn tại
+					}
+					    
+					// Chuẩn bị câu truy vấn SQL cho bảng câu hỏi
+//			        String sql = "INSERT INTO nameid (username,password,email,isonline,sex,point,winstreak,totalmatch,pointiq) VALUES (?,?,?,0,?,0,0,0,0)";
+					// Tạo một PreparedStatement cho bảng câu hỏi
+//			        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
 
-			        // Tạo một PreparedStatement cho bảng câu hỏi
-			        preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+					// Lấy giá trị từ form và thiết lập cho các tham số trong câu truy vấn câu hỏi
+					String username = textField_2.getText();
+					String password = passwordField.getText();
+					String hashedPassword = null;
+					// Hash mật khẩu
+					try {
+					    hashedPassword = PasswordHasher.hashPassword(password);
+					} catch (NoSuchAlgorithmException ex) {
+					    ex.printStackTrace();
+					}
 
-			        // Lấy giá trị từ form và thiết lập cho các tham số trong câu truy vấn câu hỏi
-			        String username = textField_2.getText();
-			        preparedStatement.setString(1, username);
-			        String password = passwordField.getText();
-			        String hashedPassword = null;
-                    try {
-                        hashedPassword = PasswordHasher.hashPassword(password);
-                    } catch (NoSuchAlgorithmException ex) {
-                        // Handle the exception (print or log it, for example)
-                        ex.printStackTrace();
-                    }
+					String email = textField.getText();
+					String gender = "";
+					if (rdbtnNewRadioButton.isSelected()) {
+						gender = "M";
+					} else if (rdbtnNewRadioButton_1.isSelected()) {
+						gender = "F";
+					} else if (rdbtnNewRadioButton_2.isSelected()) {
+						gender = "O";
+					}
+					
+					// Gọi phương thức đăng ký của Worker
+					int result = worker.signUpUser(username, hashedPassword, email, gender);
 
-                    preparedStatement.setString(2, hashedPassword);
-			        String email = textField.getText();
-			        preparedStatement.setString(3, email);
-			        preparedStatement.setString(4, gender);
-			        EmailSender.sendEmail(email, generatedOTP);
-			        String enteredOTP = JOptionPane.showInputDialog("Nhập mã OTP đã gửi đến email của bạn:");
-			        if (enteredOTP != null && enteredOTP.equals(generatedOTP)) {
-	                    // Nếu đúng, tiến hành đăng ký
-	                    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
-	                    int rowsAffected = preparedStatement.executeUpdate();
-	                    if (rowsAffected > 0) {
-	                    	SwingUtilities.invokeLater(() -> {
-	                    		Login loginFrame = new Login(socket);
-				                loginFrame.setVisible(true);
-				                dispose();
-	                        });
-				        	
-
-				            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
-				            if (generatedKeys.next()) {
-				                int nameId = generatedKeys.getInt(1);
-				                
-				               
-				        } 
-				        }
-	                } else {
-	                    // Nếu sai, hiển thị thông báo lỗi
-	                    JOptionPane.showMessageDialog(null, "Xác nhận không thành công. Vui lòng thử lại.");
-	                }
-			        preparedStatement.setString(4, gender);
-			        
-			        // Kiểm tra xem có bao nhiêu dòng đã được ảnh hưởng
-			        
-			    } catch (SQLException ex) {
-			        ex.printStackTrace();
-			    } finally {
-			        // Đóng kết nối và các PreparedStatement
-			        JDBCUtil.closeConnection(connection);
-			    }
-			}
+					
+					EmailSender.sendEmail(email, generatedOTP);
+					String enteredOTP = JOptionPane.showInputDialog("Nhập mã OTP đã gửi đến email của bạn:");
+					if (enteredOTP != null && enteredOTP.equals(generatedOTP) && result != -1) {
+					    // Nếu đúng, tiến hành đăng ký
+					    JOptionPane.showMessageDialog(null, "Đăng ký thành công!");
+					    int rowsAffected = worker.signUpUser(username, hashedPassword, email, gender);
+					    if (rowsAffected > 0) {
+					    	SwingUtilities.invokeLater(() -> {
+					    		Login loginFrame = new Login(socket);
+					            loginFrame.setVisible(true);
+					            dispose();
+					        });
+//					            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+//					            if (generatedKeys.next()) {
+//					                int nameId = generatedKeys.getInt(1);				               
+//					            } 
+					    }
+					} else {
+					    // Nếu sai, hiển thị thông báo lỗi
+					    JOptionPane.showMessageDialog(null, "Xác nhận không thành công. Vui lòng thử lại.");
+					}
 				}
+			}
 		});
         btnNewButton.setBounds(285, 212, 89, 23);
         contentPane.add(btnNewButton);
@@ -208,6 +191,7 @@ public class SignUp extends JFrame {
 		btnNewButton_1.setBounds(180, 212, 89, 23);
 		contentPane.add(btnNewButton_1);
 	}
+	    
 	    private boolean isInputValid() {
 		    String email = textField.getText();
 		    String password = new String(passwordField.getPassword());
@@ -254,20 +238,6 @@ public class SignUp extends JFrame {
 	        }
 
 	    }
-	 // Hàm kiểm tra xem email đã tồn tại hay chưa
-	    private boolean isEmailExists(Connection connection, String email) throws SQLException {
-	        String query = "SELECT COUNT(*) FROM nameid WHERE email=?";
-	        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-	            preparedStatement.setString(1, email);
-	            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-	                if (resultSet.next()) {
-	                    int count = resultSet.getInt(1);
-	                    return count > 0;
-	                }
-	            }
-	        }
-	        return false;
-	    }
 	    private String generateOTP() {
 	        int otpLength = 6;
 	        StringBuilder otp = new StringBuilder();
@@ -282,17 +252,4 @@ public class SignUp extends JFrame {
 	    }
 	    // Thêm biến để lưu trữ OTP
 	    private String generatedOTP;
-	    private boolean isUsernameExists(Connection connection, String username) throws SQLException {
-	        String query = "SELECT COUNT(*) FROM nameid WHERE username=?";
-	        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-	            preparedStatement.setString(1, username);
-	            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-	                if (resultSet.next()) {
-	                    int count = resultSet.getInt(1);
-	                    return count > 0;
-	                }
-	            }
-	        }
-	        return false;
-	    }
 }

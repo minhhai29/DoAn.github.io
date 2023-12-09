@@ -342,8 +342,109 @@ public class Worker implements Runnable {
             e.printStackTrace();
         }
     }
+    
+    
 
+    public boolean isEmailExists(String email) {
+        Connection connection = null;
+        try {
+            connection = JDBCUtil.getConnection();
+            String query = "SELECT COUNT(*) FROM nameid WHERE email=?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, email);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        int count = resultSet.getInt(1);
+                        return count > 0;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // Đóng kết nối
+            closeConnection(connection);
+        }
+        return false;
+    }
 
-	}
+    public boolean isUsernameExists(String username) {
+        Connection connection = null;
+        try {
+            connection = JDBCUtil.getConnection();
+            String query = "SELECT COUNT(*) FROM nameid WHERE username=?";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setString(1, username);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        int count = resultSet.getInt(1);
+                        return count > 0;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            // Đóng kết nối
+            closeConnection(connection);
+        }
+        return false;
+    }
 
+    // Hàm để đóng kết nối
+    private void closeConnection(Connection connection) {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public int signUpUser(String username, String hashedPassword, String email, String gender) {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        int result = -1;
+        try {
+            // Tạo một PreparedStatement cho bảng nameid
+            connection = JDBCUtil.getConnection();
+            // Chuẩn bị câu truy vấn SQL cho bảng nameid
+            String sql = "INSERT INTO nameid (username, password, email, isonline, sex, point, winstreak, totalmatch, pointiq) VALUES (?, ?, ?, 0, ?, 0, 0, 0, 0)";
+            // Tạo 1 PreparedStatement cho bảng nameid
+            preparedStatement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+            // Lấy giá trị từ form và thiết lập cho các tham số trong câu truy vấn
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, hashedPassword);
+            preparedStatement.setString(3, email);
+            preparedStatement.setString(4, gender);
 
+            // Thi hành câu truy vấn chèn và kiểm tra số lượng dòng bị ảnh hưởng
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+            	int generatedKey = getGeneratedKey(preparedStatement);
+                return generatedKey;
+            } else {
+                return -1; // Trường hợp thất bại
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return -1; // Trường hợp lỗi
+        } finally {
+            JDBCUtil.closeStatement(preparedStatement);
+            JDBCUtil.closeConnection(connection);
+        }
+    }
+
+    private int getGeneratedKey(PreparedStatement preparedStatement) throws SQLException {
+    	int generatedKey = -1;
+    	// Lấy giá trị khóa chính được tạo tự động (nếu có)
+        try (var generatedKeys = preparedStatement.getGeneratedKeys()) {
+            if (generatedKeys.next()) {
+                generatedKey = generatedKeys.getInt(1);
+            }
+        }
+        return generatedKey;
+    }
+}
